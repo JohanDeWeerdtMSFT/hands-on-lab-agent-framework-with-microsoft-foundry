@@ -3,7 +3,7 @@ published: true
 type: workshop
 title: Product Hands-on Lab - Microsoft Agent Framework with Microsoft Foundry
 short_title: Agent Framework with Microsoft Foundry
-description: This workshop will cover how to build agentic applications using the Microsoft Agent Framework with Microsoft Foundry, leveraging various Azure services to create scalable and efficient solutions.
+description: This workshop will cover how to build agentic applications using the Microsoft Agent Framework with Microsoft Foundry. You will use it to build a complete real world scenario.
 level: beginner # Required. Can be 'beginner', 'intermediate' or 'advanced'
 navigation_numbering: true
 authors: # Required. You can add as many authors as needed
