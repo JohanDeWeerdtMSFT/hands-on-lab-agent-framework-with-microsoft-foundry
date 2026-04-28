@@ -255,7 +255,7 @@ The deployment should take around 5 minutes to complete.
 [vs-code]: https://code.visualstudio.com/
 [azure-function-vs-code-extension]: https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurefunctions
 [docker-desktop]: https://www.docker.com/products/docker-desktop/
-[repo-fork]: https://github.com/damienaicheh/hands-on-lab-agent-framework-on-azure/fork
+[repo-fork]: https://github.com/microsoft/hands-on-lab-agent-framework-with-microsoft-foundry/fork
 [git-client]: https://git-scm.com/downloads
 [github-account]: https://github.com/join
 [download-python]: https://www.python.org/downloads/
