@@ -21,7 +21,7 @@ locals {
     tomap(
       {
         "Environment" = var.environment,
-        "ProjectName" = "hands-on-lab-agent-framework-on-azure",
+        "ProjectName" = "hands-on-lab-agent-framework-with-microsoft-foundry",
         "Domain"      = var.domain,
         # Demo environments specific tags to be removed in real projects
         "SecurityControl" = "Ignore",
