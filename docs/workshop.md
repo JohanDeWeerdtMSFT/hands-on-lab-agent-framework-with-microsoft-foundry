@@ -464,6 +464,15 @@ from agent_framework_devui import serve
 If you want to discover more about Dev UI, you can follow the official tutorial:
 [Dev UI on Microsoft Learn](https://learn.microsoft.com/en-us/agent-framework/user-guide/devui/?pivots=programming-language-python)
 
+If Dev UI asks for an authentication token, run the app with a fixed token:
+
+```bash
+export DEVUI_AUTH_TOKEN="devui-lab-token"
+uv run python main.py
+```
+
+Troubleshooting note: you may see tool calls in the Foundry portal while the Dev UI Tools tab shows none. This can happen even when tools are executed successfully.
+
 </details>
 
 Now if you run your agent again:
