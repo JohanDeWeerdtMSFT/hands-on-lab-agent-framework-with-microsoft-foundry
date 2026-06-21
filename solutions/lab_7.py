@@ -9,7 +9,7 @@ from agent_framework_devui import register_cleanup, serve
 from agent_framework_orchestrations import GroupChatBuilder, SequentialBuilder
 from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import PromptAgentDefinition
-from azure.identity import AzureCliCredential
+from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 from httpx import AsyncClient
 
@@ -22,7 +22,7 @@ load_dotenv()
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-    credential = AzureCliCredential()
+    credential = DefaultAzureCredential()
 
     issue_analyzer_instructions = """
                 You are analyzing issues. 

@@ -304,6 +304,29 @@ Then assign its value inside the `.env` file in the `FOUNDRY_PROJECT_ENDPOINT` e
 
 When it's done, due to the role assigned to you on this cloud resource, you can have access to the models with your code.
 
+<div class="tip" data-title="GitHub Codespaces authentication">
+
+> This workshop also works in GitHub Codespaces. `DefaultAzureCredential` usually authenticates with your Azure CLI session in Codespaces, not with a managed identity by default.
+>
+> Complete the **Sign in to Azure** step above first. In Codespaces, `az login --use-device-code --tenant <yourtenantid or domain.com>` is usually the most reliable option.
+>
+> Then run these checks before executing the labs:
+>
+> ```bash
+> az account show --query user.name -o tsv
+> az account show --query tenantId -o tsv
+> ```
+>
+> Then validate your Foundry access with a quick call:
+>
+> ```bash
+> uv run python solutions/lab_1_console.py
+> ```
+>
+> If authentication fails, verify your user has these roles on the Foundry resource: Foundry User, Foundry Project Manager, and Cognitive Services OpenAI Contributor.
+
+</div>
+
 Now let's create your first agent!
 
 Inside `main.py` first, define the structure of the file and load the `.env` file and add the imports:
@@ -317,7 +340,7 @@ from agent_framework import Agent
 from agent_framework.foundry import FoundryChatClient
 from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import PromptAgentDefinition
-from azure.identity import AzureCliCredential
+from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -353,7 +376,7 @@ Then, let's create the first agent: IssueAnalyzerAgent, using the Agent Framewor
 Store the created agent version first, then reuse its returned name when instantiating the local `Agent`.
 
 ```python
-credential = AzureCliCredential()
+credential = DefaultAzureCredential()
 
 issue_analyzer_instructions = """
                 You are analyzing issues. 

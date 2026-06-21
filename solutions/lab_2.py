@@ -7,7 +7,7 @@ from agent_framework.foundry import FoundryChatClient
 from agent_framework_devui import serve
 from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import PromptAgentDefinition
-from azure.identity import AzureCliCredential
+from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 
 from models.issue_analyzer import IssueAnalyzer
@@ -18,7 +18,7 @@ load_dotenv()
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-    credential = AzureCliCredential()
+    credential = DefaultAzureCredential()
 
     issue_analyzer_instructions = """
                     You are analyzing issues. 

@@ -6,7 +6,7 @@ from agent_framework import Agent
 from agent_framework.foundry import FoundryChatClient
 from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import PromptAgentDefinition
-from azure.identity import AzureCliCredential
+from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -30,7 +30,7 @@ There is an issue with the Azure App Services is causing intermittent 500 errors
 async def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-    credential = AzureCliCredential()
+    credential = DefaultAzureCredential()
 
     issue_analyzer_instructions = """
                     You are analyzing issues. 
