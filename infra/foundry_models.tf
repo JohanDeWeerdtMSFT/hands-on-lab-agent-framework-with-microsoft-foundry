@@ -1,5 +1,5 @@
 resource "azapi_resource" "chat_model_deployment" {
-  type      = "Microsoft.CognitiveServices/accounts/deployments@2025-04-01-preview"
+  type      = "Microsoft.CognitiveServices/accounts/deployments@2025-09-01"
   name      = "chatmodel"
   parent_id = azapi_resource.foundry.id
   tags      = local.tags_azapi

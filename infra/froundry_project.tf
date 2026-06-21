@@ -1,5 +1,5 @@
 resource "azapi_resource" "project" {
-  type      = "Microsoft.CognitiveServices/accounts/projects@2025-06-01"
+  type      = "Microsoft.CognitiveServices/accounts/projects@2025-09-01"
   name      = format("proj-%s", local.resource_suffix_kebabcase)
   location  = local.resource_group_location
   parent_id = azapi_resource.foundry.id
@@ -18,7 +18,7 @@ resource "azapi_resource" "project" {
 }
 
 resource "azapi_resource" "foundry_project_app_insights_connection" {
-  type      = "Microsoft.CognitiveServices/accounts/projects/connections@2025-06-01"
+  type      = "Microsoft.CognitiveServices/accounts/projects/connections@2025-09-01"
   name      = "appi-connection-foundry-project"
   parent_id = azapi_resource.project.id
   body = {

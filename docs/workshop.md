@@ -238,6 +238,14 @@ Then run the following command to deploy the infrastructure:
 terraform apply -auto-approve
 ```
 
+<div class="tip" data-title="Foundry API version compatibility">
+
+> This workshop currently uses `2025-09-01` for Foundry ARM resource APIs because it is the latest stable version supported by AzAPI schema validation.
+>
+> Newer Microsoft Learn schema versions may be published before AzAPI validation support is available. If `terraform validate` passes and `terraform plan` shows no unexpected replacement, keep `2025-09-01` and revisit when the AzAPI provider catches up.
+
+</div>
+
 The deployment should take around 5 minutes to complete.
 
 [ms-python-extension]: https://marketplace.visualstudio.com/items?itemName=ms-python.python
