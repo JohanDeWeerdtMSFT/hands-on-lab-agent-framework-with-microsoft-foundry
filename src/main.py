@@ -5,11 +5,18 @@ from typing import Any, cast
 
 from agent_framework import Agent
 from agent_framework.foundry import FoundryChatClient
+from agent_framework.observability import (
+    create_resource,
+    enable_instrumentation,
+    get_tracer,
+)
 from agent_framework_devui import serve
 from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import PromptAgentDefinition
 from azure.identity import DefaultAzureCredential
+from azure.monitor.opentelemetry import configure_azure_monitor
 from dotenv import load_dotenv
+from opentelemetry.trace import SpanKind, format_trace_id
 
 from models.issue_analyzer import IssueAnalyzer
 from tools.time_per_issue_tools import TimePerIssueTools
@@ -82,7 +89,18 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    configure_azure_monitor(
+        connection_string=os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"],
+        enable_live_metrics=True,
+        resource=create_resource(),
+        enable_performance_counters=False,
+    )
+    enable_instrumentation(enable_sensitive_data=True)
+    with get_tracer().start_as_current_span("Issue Analyzer Agent Workflow", kind=SpanKind.CLIENT) as current_span:
+        print(
+            f"Trace ID: {format_trace_id(current_span.get_span_context().trace_id)}")
+        main()
+    # main()
 
     # ===== BEGIN: Stream agent response =====
     # print(f"User: {ISSUE_CONTEXT}")
