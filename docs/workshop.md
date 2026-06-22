@@ -106,6 +106,8 @@ Before starting this lab, be sure to set your Azure environment :
 - An Azure Subscription with the **Contributor** role to create and manage the labs' resources and deploy the infrastructure as code
 - Register the Azure providers on your Azure Subscription if not done yet: `Microsoft.CognitiveServices`.
 
+For the Foundry project and model operations used later in the lab, the signed-in user should also have the **Foundry User**, **Foundry Project Manager**, and **Cognitive Services OpenAI Contributor** roles on the Foundry resources. Some portal screens may still show the previous **Azure AI ...** role names while the Foundry role rename rolls out.
+
 To retrieve the lab content :
 
 - A GitHub account (Free, Team or Enterprise)
@@ -121,6 +123,8 @@ To retrieve the lab content :
 > To focus on the main purpose of the lab, we encourage the usage of devcontainers/codespace as they abstract the dev environment configuration, and avoid potential local dependencies conflict.
 >
 > You could decide to run everything without relying on a devcontainer : To do so, make sure you install all the prerequisites detailed below.
+>
+> This workshop is tested with the versions pinned in `src/pyproject.toml` and `src/uv.lock`. Keep `mcp` on the 1.x line (`mcp>=1.27.0,<2.0.0`); MCP 2.x prereleases can break Agent Framework MCP tool initialization.
 
 </div>
 
@@ -318,6 +322,8 @@ When it's done, due to the role assigned to you on this cloud resource, you can 
 >
 > Complete the **Sign in to Azure** step above first. In Codespaces, `az login --use-device-code --tenant <yourtenantid or domain.com>` is usually the most reliable option.
 >
+> Run lab commands from the `src/` folder unless the workshop says otherwise. The hosted-agent sample lives separately in `src-hosted/` and is not part of the prompt-agent Dev UI lab flow.
+>
 > Then run these checks before executing the labs:
 >
 > ```bash
@@ -331,7 +337,7 @@ When it's done, due to the role assigned to you on this cloud resource, you can 
 > uv run python solutions/lab_1_console.py
 > ```
 >
-> If authentication fails, verify your user has these roles on the Foundry resource: Foundry User, Foundry Project Manager, and Cognitive Services OpenAI Contributor.
+> If authentication fails, verify your user has these roles on the Foundry resource: Foundry User, Foundry Project Manager, and Cognitive Services OpenAI Contributor. If the portal shows older Azure AI role names, use the equivalent Azure AI User / Azure AI Project Manager naming.
 
 </div>
 

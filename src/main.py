@@ -2,15 +2,16 @@ import logging
 import os
 from typing import Any, cast
 
-from agent_framework import Agent, MCPStreamableHTTPTool
+from agent_framework import Agent, AgentExecutor, MCPStreamableHTTPTool
+from agent_framework._types import Message
 from agent_framework.foundry import FoundryChatClient
 from agent_framework.observability import (
     create_resource,
     enable_instrumentation,
     get_tracer,
 )
-from agent_framework.orchestrations import GroupChatBuilder
 from agent_framework_devui import register_cleanup, serve
+from agent_framework_orchestrations import GroupChatBuilder, SequentialBuilder
 from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import PromptAgentDefinition
 from azure.identity import DefaultAzureCredential
@@ -46,8 +47,8 @@ def main():
     # Create the agent here
     credential = DefaultAzureCredential()
 
-    # first agent for issue analysis and estimation
-    # ---------------------------------------
+    # IssueAnalyzerAgent: analyzes the user's issue text and decides whether it is a bug or a feature request.
+    # For bugs, it uses the local time-estimation tool and returns structured data with the likely cause, complexity, and estimate.
     issue_analyzer_instructions = """
                 You are analyzing issues. 
                 If the ask is a feature request the complexity should be 'NA'.
@@ -88,10 +89,8 @@ def main():
         default_options=cast(Any, {"response_format": IssueAnalyzer}),
         tools=[time_per_issue_tools.calculate_time_based_on_complexity],
     )
-    # -------------------------------
-
-    # second agent for GitHub issue creation
-    # -------------------------------
+    # GitHubAgent: creates GitHub issues in the repository configured by GITHUB_REPOSITORY.
+    # It first uses file search to retrieve Contoso issue-formatting guidance, then calls the GitHub MCP issue_write tool to create the issue.
 
     github_repository_owner, github_repository_name = os.environ["GITHUB_REPOSITORY"].split(
         "/", 1
@@ -114,8 +113,16 @@ def main():
 
         Never call issue_write with empty arguments. Never ask the user for the repository owner or repository name; they are already provided above.
         If the user asks for a random issue, invent a reasonable issue title and body and create it in the configured repository.
+        
+        CRITICAL WORKFLOW:
+            1. ALWAYS use the File Search tool FIRST to search for "github issues guidelines" or "issue template" to find the proper formatting and structure
+            2. Follow the Contoso GitHub Issues Guidelines found in the vector store
+            3. Use the retrieved guidelines to format the issue properly with correct structure, labels, and format
+            4. Then use the GitHub MCP tool to create the issue with the properly formatted content
 
-        MANDATORY: You MUST always call the GitHub MCP tool to create the issue. Never just describe the issue without creating it. Your task is not complete until the issue is actually created on GitHub.
+            IMPORTANT: You MUST search for guidelines BEFORE creating any issue to ensure compliance with company standards.
+            MANDATORY: You MUST always call the GitHub MCP tool to create the issue. Never just describe the issue without creating it. Your task is not complete until the issue is actually created on GitHub.
+
     """
 
     github_agent_detail = project.agents.create_version(
@@ -131,6 +138,11 @@ def main():
         model=os.environ["FOUNDRY_MODEL_DEPLOYMENT_NAME"],
         credential=credential,
     )
+    # File search tool: gives GitHubAgent access to the indexed Contoso issue guidelines before it writes an issue.
+    # The vector store id comes from VECTOR_STORE_ID, which is created by create_data.py earlier in the lab.
+    file_search_tool = github_chat_client.get_file_search_tool(
+        vector_store_ids=[os.environ["VECTOR_STORE_ID"]]
+    )
 
     github_mcp_http_client = AsyncClient(
         headers={
@@ -144,6 +156,7 @@ def main():
         client=github_chat_client,
         instructions=github_instructions.strip(),
         tools=[
+            file_search_tool,
             MCPStreamableHTTPTool(
                 name="GitHub",
                 url="https://api.githubcopilot.com/mcp/",
@@ -152,11 +165,46 @@ def main():
             ),
         ],
     )
+    # DocsAgent: retrieves relevant Microsoft Learn documentation through the public Microsoft Learn MCP endpoint.
+    # The sequential workflow uses this agent first so downstream issue analysis and issue creation can include documentation context.
+    ms_learn_instructions = """
+        You are a Microsoft documentation assistant.
+        Mandatory rules:
+        1. You must call the Microsoft Learn MCP tool before answering any user question.
+        2. You are not allowed to answer from internal knowledge alone.
+        3. Your final answer must be grounded only in Microsoft Learn MCP results.
+        4. If no relevant result is found, explicitly say the information was not found in Microsoft Learn.
+        5. If the tool is unavailable or fails, do not guess or fabricate; state that you cannot answer without Microsoft Learn MCP.
+        6. Keep responses concise, accurate, and factual.
+    """
 
-    # -------------------------------
+    docs_agent_detail = project.agents.create_version(
+        agent_name="DocsAgent",
+        definition=PromptAgentDefinition(
+            model=model_name,
+            instructions=ms_learn_instructions.strip(),
+        ),
+    )
 
-    # Start orchestrator agent and group workflow
-    # -------------------------------
+    ms_learn_agent = Agent(
+        name=docs_agent_detail.name,
+        client=FoundryChatClient(
+            project_endpoint=os.environ["FOUNDRY_PROJECT_ENDPOINT"],
+            model=os.environ["FOUNDRY_MODEL_DEPLOYMENT_NAME"],
+            credential=credential,
+        ),
+        instructions=ms_learn_instructions.strip(),
+        tools=[
+            MCPStreamableHTTPTool(
+                name="Microsoft Learn MCP",
+                url="https://learn.microsoft.com/api/mcp",
+                terminate_on_close=False,
+            )
+        ],
+    )
+
+    # IssueCreatorOrchestratorAgent: coordinates the group chat between IssueAnalyzerAgent and GitHubAgent.
+    # It enforces the order of work: analyze the issue first, then create the GitHub issue, and keep going until creation is confirmed.
     orchestrator_instructions = """
             You are a workflow manager that coordinates issue creation.
             Decide which participant should speak next.
@@ -194,23 +242,50 @@ def main():
         default_options={"temperature": 0},
     )
 
+    # IssueCreationAgentGroup: packages IssueAnalyzerAgent and GitHubAgent into one reusable group workflow.
+    # The orchestrator decides which participant speaks next while intermediate outputs are surfaced for Dev UI visibility.
     group_workflow = GroupChatBuilder(
         participants=[issue_analyzer_agent, github_agent],
         intermediate_output_from="all_other",
         orchestrator_agent=orchestrator_agent,
     ).build()
 
+    # IssueCreationAgentGroup agent wrapper: lets the group workflow be used as one step inside another workflow.
+    # The sequential workflow can then call the whole issue-analysis-and-creation group after DocsAgent finishes.
+    group_workflow_agent = group_workflow.as_agent(
+        name="IssueCreationAgentGroup"
+    )
+
+    def _flatten_handoff_to_user_message(messages: list[Message]) -> list[Message]:
+        # Pass only plain text to the next step so it doesn't inherit MCP tool-call artifacts.
+        combined_text = "\n\n".join(
+            message.text for message in messages if message.text)
+        return [Message(role="user", contents=[combined_text])] if combined_text else messages
+
+    # Sequential workflow: runs DocsAgent first and then hands its documentation context to IssueCreationAgentGroup.
+    # The handoff filter converts the DocsAgent output into a clean user message so the nested group workflow receives text instead of tool-call artifacts.
+    sequential_workflow = SequentialBuilder(
+        participants=[
+            ms_learn_agent,
+            AgentExecutor(
+                group_workflow_agent,
+                context_mode="custom",
+                context_filter=_flatten_handoff_to_user_message,
+            ),
+        ],
+    ).build()
+
     # --------------------
 
-    # DevUI server can host multiple agents, and you can choose which ones to include in the UI. Here we include both the issue analyzer agent and the GitHub agent, but not the orchestrator agent since it's mainly for coordination and doesn't need to be directly interacted with by the user.
-    # serve(entities=[issue_analyzer_agent], port=8090, auto_open=True)
-    # Cleanup hooks execute during DevUI server shutdown, before entity clients are closed. Supports both synchronous and asynchronous callables.
-    # register_cleanup(github_agent, github_mcp_http_client.aclose)
     # Cleanup hooks execute during DevUI server shutdown, before entity clients are closed. Supports both synchronous and asynchronous callables.
     register_cleanup(github_agent, github_mcp_http_client.aclose)
 
-    serve(entities=[issue_analyzer_agent, github_agent, group_workflow],
-          port=8090, auto_open=True)
+    serve(
+        entities=[issue_analyzer_agent, github_agent,
+                  group_workflow, ms_learn_agent, sequential_workflow],
+        port=8090,
+        auto_open=True,
+    )
 
 
 if __name__ == "__main__":

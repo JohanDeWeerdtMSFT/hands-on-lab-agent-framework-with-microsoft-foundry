@@ -32,6 +32,20 @@ Use this setup when following the hands-on lab steps or iterating on the prompt-
 
 The hosted-agent project in `src-hosted/` is intentionally separate. It is used for Foundry hosted-agent local testing and deployment with `azd ai agent run`, `azd deploy`, and the Foundry Agent Inspector. Changes in `src-hosted/` should not require changes to the prompt-agent lab entry point in `src/main.py`.
 
+## Codespaces And Version Notes
+
+This lab is intended to work well from a fork in GitHub Codespaces. Open the fork in Codespaces, sign in with Azure CLI, and run commands from the `src/` folder unless the workshop explicitly says otherwise.
+
+Before running Dev UI, use the fixed workshop token so the browser can authenticate to the local backend:
+
+```bash
+DEVUI_AUTH_TOKEN="devui-lab-token" uv run python main.py
+```
+
+The lab currently targets Python `>=3.13,<4.0` and pins Agent Framework, Foundry SDK, Azure SDK, and MCP dependencies in `src/pyproject.toml` and `src/uv.lock`. Keep `mcp` on the 1.x line (`mcp>=1.27.0,<2.0.0`); MCP 2.x prereleases use a different initialization result shape and can break Agent Framework MCP tools.
+
+For Azure access, make sure the signed-in user can create the lab infrastructure and use the Foundry project. The roles most commonly needed are `Contributor` for deployment plus `Foundry User`, `Foundry Project Manager`, and `Cognitive Services OpenAI Contributor` on the Foundry resources. Some Azure portal surfaces may still show the older `Azure AI ...` role names while the Foundry role rename rolls out.
+
 
 ## Contributing
 
