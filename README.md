@@ -36,6 +36,21 @@ The hosted-agent project in `src-hosted/` is intentionally separate. It is used 
 
 This lab is intended to work well from a fork in GitHub Codespaces. Open the fork in Codespaces, sign in with Azure CLI, and run commands from the `src/` folder unless the workshop explicitly says otherwise.
 
+Minimum requirements to open the lab in Codespaces:
+
+- A GitHub account with Codespaces enabled and available Codespaces quota.
+- A fork of this repository created from the `main` branch.
+- A browser that can sign in to GitHub and open the Codespaces web editor, or VS Code with the GitHub Codespaces extension if you prefer the desktop client.
+- No local Python, Terraform, Azure CLI, Docker, or `uv` install is required when using Codespaces; the dev container supplies the lab tooling.
+
+Open the Codespace from your fork:
+
+1. Go to your fork on GitHub.
+2. Select **Code**.
+3. Select **Codespaces**.
+4. Select **Create codespace on main** or the `+` button.
+5. Wait for the dev container to finish building, then continue with the workshop sign-in and infrastructure steps.
+
 Before running Dev UI, use the fixed workshop token so the browser can authenticate to the local backend:
 
 ```bash

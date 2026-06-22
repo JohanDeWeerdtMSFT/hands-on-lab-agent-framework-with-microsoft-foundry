@@ -130,18 +130,26 @@ To retrieve the lab content :
 
 ### 🥇 : Pre-configured GitHub Codespace
 
-To use a GitHub Codespace, you will need :
+To open this lab in a GitHub Codespace, you need only the following minimum requirements:
 
-- [A GitHub Account][github-account]
+- [A GitHub Account][github-account] with Codespaces enabled and available Codespaces quota.
+- A fork of this repository created from the **main** branch.
+- A browser that can sign in to GitHub and open the Codespaces web editor, or VS Code with the GitHub Codespaces extension if you prefer the desktop client.
+
+You do not need to install Python, Terraform, Azure CLI, Docker, or `uv` on your local machine when using Codespaces. The dev container provides the lab tooling and keeps the dependency versions aligned with the workshop.
 
 GitHub Codespace offers the ability to run a complete dev environment (Visual Studio Code, Extensions, Tools, Secure port forwarding etc.) on a dedicated virtual machine.
 The configuration for the environment is defined in the `.devcontainer` folder, making sure everyone gets to develop and practice on identical environments : No more conflict on dependencies or missing tools !
 
 Every GitHub account (even the free ones) grants access to 120 vcpu hours per month, _**for free**_. A 2 vcpu dedicated environment is enough for the purpose of the lab, meaning you could run such environment for 60 hours a month at no cost!
 
-To get your codespace ready for the labs, here are a few steps to execute :
+To get your codespace ready for the labs, follow this path:
 
-- After you forked the repo, click on `<> Code`, `Codespaces` tab and then click on the `+` button:
+1. Go to your fork on GitHub.
+2. Select **Code**.
+3. Select the **Codespaces** tab.
+4. Select **Create codespace on main** or the `+` button.
+5. Wait for the dev container build to finish before running lab commands.
 
 ![codespace-new](./assets/codespace-new.png)
 
