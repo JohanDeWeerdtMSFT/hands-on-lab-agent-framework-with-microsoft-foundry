@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import os
 from typing import Any, cast
@@ -84,6 +83,7 @@ def main():
             model=os.environ["FOUNDRY_MODEL_DEPLOYMENT_NAME"],
             credential=credential,
         ),
+        instructions=issue_analyzer_instructions.strip(),
         default_options=cast(Any, {"response_format": IssueAnalyzer}),
         tools=[time_per_issue_tools.calculate_time_based_on_complexity],
     )
@@ -91,11 +91,27 @@ def main():
 
     # second agent for GitHub issue creation
 
+    github_repository_owner, github_repository_name = os.environ["GITHUB_REPOSITORY"].split(
+        "/", 1
+    )
+
     github_instructions = f"""
         You are a helpful assistant that can create GitHub issues following Contoso's guidelines.
-        You work on this repository: {os.environ["GITHUB_REPOSITORY"]}
+        You work on this repository: {github_repository_owner}/{github_repository_name}
+        Repository owner: {github_repository_owner}
+        Repository name: {github_repository_name}
         
-        Use the GitHub MCP tool to create the issue with the properly formatted content
+        Use the GitHub MCP issue_write tool to create the issue with properly formatted content.
+
+        When creating an issue, ALWAYS call issue_write with these arguments:
+        - method: "create"
+        - owner: "{github_repository_owner}"
+        - repo: "{github_repository_name}"
+        - title: a concise issue title
+        - body: a clear issue body with the relevant problem, context, and acceptance criteria or reproduction details
+
+        Never call issue_write with empty arguments. Never ask the user for the repository owner or repository name; they are already provided above.
+        If the user asks for a random issue, invent a reasonable issue title and body and create it in the configured repository.
 
         MANDATORY: You MUST always call the GitHub MCP tool to create the issue. Never just describe the issue without creating it. Your task is not complete until the issue is actually created on GitHub.
     """
@@ -124,6 +140,7 @@ def main():
     github_agent = Agent(
         name=github_agent_detail.name,
         client=github_chat_client,
+        instructions=github_instructions.strip(), 
         tools=[
             MCPStreamableHTTPTool(
                 name="GitHub",

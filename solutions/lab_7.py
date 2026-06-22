@@ -103,6 +103,7 @@ def main() -> None:
             model=os.environ["FOUNDRY_MODEL_DEPLOYMENT_NAME"],
             credential=credential,
         ),
+        instructions=issue_analyzer_instructions.strip(),
         default_options=cast(Any, {"response_format": IssueAnalyzer}),
         tools=[time_per_issue_tools.calculate_time_based_on_complexity],
     )
@@ -135,6 +136,7 @@ def main() -> None:
     github_agent = Agent(
         name=github_agent_detail.name,
         client=github_chat_client,
+        instructions=github_instructions.strip(),
         tools=[
             file_search_tool,
             MCPStreamableHTTPTool(
@@ -161,6 +163,7 @@ def main() -> None:
             model=os.environ["FOUNDRY_MODEL_DEPLOYMENT_NAME"],
             credential=credential,
         ),
+        instructions=orchestrator_instructions.strip(),
         default_options={"temperature": 0},
     )
 
@@ -185,6 +188,7 @@ def main() -> None:
             model=os.environ["FOUNDRY_MODEL_DEPLOYMENT_NAME"],
             credential=credential,
         ),
+        instructions=ms_learn_instructions.strip(),
         tools=[
             MCPStreamableHTTPTool(
                 name="Microsoft Learn MCP",

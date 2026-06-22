@@ -47,6 +47,7 @@ def main() -> None:
             model=os.environ["FOUNDRY_MODEL_DEPLOYMENT_NAME"],
             credential=credential,
         ),
+        instructions=issue_analyzer_instructions.strip(),
         default_options=cast(Any, {"response_format": IssueAnalyzer}),
     )
 

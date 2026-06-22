@@ -22,6 +22,12 @@ The hosted agent duplicates only the small model and tool modules it needs so it
 
 The prompt-agent lab stays in `src/` and is the path used by the workshop guide. Its entry point is `src/main.py`, which creates prompt-agent versions in the configured Foundry project and serves them locally with Agent Framework DevUI on port `8090`.
 
+Start the prompt-agent lab DevUI with the fixed workshop token:
+
+```bash
+DEVUI_AUTH_TOKEN="devui-lab-token" uv run python main.py
+```
+
 Use this setup when following the hands-on lab steps or iterating on the prompt-agent examples. The lab project reads its configuration from the `src/.env` file, including the Foundry project endpoint, model deployment name, and any tool-specific settings used by the prompt-agent labs.
 
 The hosted-agent project in `src-hosted/` is intentionally separate. It is used for Foundry hosted-agent local testing and deployment with `azd ai agent run`, `azd deploy`, and the Foundry Agent Inspector. Changes in `src-hosted/` should not require changes to the prompt-agent lab entry point in `src/main.py`.

@@ -44,6 +44,7 @@ def main() -> None:
             model=os.environ["FOUNDRY_MODEL_DEPLOYMENT_NAME"],
             credential=credential,
         ),
+        instructions=issue_analyzer_instructions.strip(),
     )
 
     serve(entities=[issue_analyzer_agent], port=8090, auto_open=True)
