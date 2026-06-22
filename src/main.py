@@ -9,6 +9,7 @@ from agent_framework.observability import (
     enable_instrumentation,
     get_tracer,
 )
+from agent_framework.orchestrations import GroupChatBuilder
 from agent_framework_devui import register_cleanup, serve
 from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import PromptAgentDefinition
@@ -154,11 +155,61 @@ def main():
 
     # -------------------------------
 
+    # Start orchestrator agent and group workflow
+    # -------------------------------
+    orchestrator_instructions = """
+            You are a workflow manager that coordinates issue creation.
+            Decide which participant should speak next.
+
+            Output rules are mandatory:
+            - Return ONLY one raw JSON object.
+            - Do NOT wrap JSON in markdown fences.
+            - Do NOT add extra text before or after JSON.
+            - Use exactly these keys: terminate, reason, next_speaker, final_message.
+            - If terminate is false, next_speaker must be one of: IssueAnalyzerAgent, GitHubAgent.
+
+            Workflow policy:
+            1. Ask IssueAnalyzerAgent first to classify and estimate complexity.
+            2. Then ask GitHubAgent to create the issue.
+            3. Do NOT terminate until GitHubAgent has actually created the issue on GitHub and provides a link or confirmation.
+            4. If GitHubAgent only describes the issue without creating it, ask GitHubAgent again to create it.
+        """
+
+    orchestrator_agent_detail = project.agents.create_version(
+        agent_name="IssueCreatorOrchestratorAgent",
+        definition=PromptAgentDefinition(
+            model=model_name,
+            instructions=orchestrator_instructions.strip(),
+        ),
+    )
+
+    orchestrator_agent = Agent(
+        name=orchestrator_agent_detail.name,
+        client=FoundryChatClient(
+            project_endpoint=os.environ["FOUNDRY_PROJECT_ENDPOINT"],
+            model=os.environ["FOUNDRY_MODEL_DEPLOYMENT_NAME"],
+            credential=credential,
+        ),
+        instructions=orchestrator_instructions.strip(),
+        default_options={"temperature": 0},
+    )
+
+    group_workflow = GroupChatBuilder(
+        participants=[issue_analyzer_agent, github_agent],
+        intermediate_output_from="all_other",
+        orchestrator_agent=orchestrator_agent,
+    ).build()
+
+    # --------------------
+
+    # DevUI server can host multiple agents, and you can choose which ones to include in the UI. Here we include both the issue analyzer agent and the GitHub agent, but not the orchestrator agent since it's mainly for coordination and doesn't need to be directly interacted with by the user.
     # serve(entities=[issue_analyzer_agent], port=8090, auto_open=True)
+    # Cleanup hooks execute during DevUI server shutdown, before entity clients are closed. Supports both synchronous and asynchronous callables.
+    # register_cleanup(github_agent, github_mcp_http_client.aclose)
     # Cleanup hooks execute during DevUI server shutdown, before entity clients are closed. Supports both synchronous and asynchronous callables.
     register_cleanup(github_agent, github_mcp_http_client.aclose)
 
-    serve(entities=[issue_analyzer_agent, github_agent],
+    serve(entities=[issue_analyzer_agent, github_agent, group_workflow],
           port=8090, auto_open=True)
 
 

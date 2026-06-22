@@ -896,7 +896,7 @@ orchestrator_agent = Agent(
 
 group_workflow = GroupChatBuilder(
     participants=[issue_analyzer_agent, github_agent],
-    intermediate_outputs=True,
+    intermediate_output_from="all_other",
     orchestrator_agent=orchestrator_agent,
 ).build()
 ```
