@@ -46,7 +46,7 @@ def main():
     credential = DefaultAzureCredential()
 
     # first agent for issue analysis and estimation
-
+    # ---------------------------------------
     issue_analyzer_instructions = """
                 You are analyzing issues. 
                 If the ask is a feature request the complexity should be 'NA'.
@@ -90,6 +90,7 @@ def main():
     # -------------------------------
 
     # second agent for GitHub issue creation
+    # -------------------------------
 
     github_repository_owner, github_repository_name = os.environ["GITHUB_REPOSITORY"].split(
         "/", 1
@@ -140,7 +141,7 @@ def main():
     github_agent = Agent(
         name=github_agent_detail.name,
         client=github_chat_client,
-        instructions=github_instructions.strip(), 
+        instructions=github_instructions.strip(),
         tools=[
             MCPStreamableHTTPTool(
                 name="GitHub",

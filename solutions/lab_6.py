@@ -12,6 +12,7 @@ from azure.ai.projects.models import PromptAgentDefinition
 from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 from httpx import AsyncClient
+
 from models.issue_analyzer import IssueAnalyzer
 from tools.time_per_issue_tools import TimePerIssueTools
 
