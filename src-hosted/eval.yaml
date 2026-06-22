@@ -1,0 +1,16 @@
+name: issue-analyzer-hosted-smoke
+agent:
+    name: issue-analyzer-hosted-agent
+    kind: hosted
+    config: .agent_configs/baseline/metadata.yaml
+dataset:
+    name: issue-analyzer-hosted-smoke
+    version: "1.0"
+    local_uri: datasets/issue-analyzer-hosted-smoke
+evaluators:
+    - name: issue-analyzer-hosted-smoke
+      version: "1"
+      local_uri: evaluators/issue-analyzer-hosted-smoke/rubric_dimensions.json
+options:
+    eval_model: chatmodel
+max_samples: 15

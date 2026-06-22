@@ -1,0 +1,38 @@
+[
+  {
+    "id": "correct_issue_type_classification",
+    "description": "The agent correctly identifies and classifies the issue as either a feature request or a bug, including appropriate handling of ambiguous or mixed-type cases.",
+    "weight": 10
+  },
+  {
+    "id": "complexity_assignment_alignment",
+    "description": "The assigned complexity level (NA, LOW, MEDIUM, HIGH) matches the identified issue type and is supported by the issue content and available evidence, such as the presence or absence of a stack trace.",
+    "weight": 5
+  },
+  {
+    "id": "tool_invocation_and_consistency",
+    "description": "For bug issues, the agent invokes the calculate_time_based_on_complexity tool with the correct complexity parameter, and the time_estimate_hours field in the output matches the tool's result. For feature requests, the tool is not called and time_estimate_hours is null or omitted.",
+    "weight": 6
+  },
+  {
+    "id": "reason_field_justification",
+    "description": "The reason field is present and provides a clear, relevant justification for the assigned complexity, referencing evidence from the issue description or stack trace as appropriate.",
+    "weight": 4
+  },
+  {
+    "id": "structured_json_completeness",
+    "description": "The output is a well-formed JSON object containing all required fields: title, description, reason, complexity, and, for bugs, time_estimate_hours. No required fields are missing or malformed.",
+    "weight": 3
+  },
+  {
+    "id": "edge_case_handling",
+    "description": "The agent correctly handles edge cases such as missing or ambiguous stack traces, mixed-type issues, or tool errors, including appropriate fallback behaviors like defaulting to NA complexity when warranted.",
+    "weight": 3
+  },
+  {
+    "id": "general_quality",
+    "description": "Other important quality factors not covered by listed criteria.",
+    "weight": 5,
+    "always_applicable": true
+  }
+]

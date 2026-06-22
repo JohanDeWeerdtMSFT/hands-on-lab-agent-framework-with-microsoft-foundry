@@ -3,19 +3,20 @@ import logging
 import os
 from typing import Any, cast
 
-from agent_framework import Agent
+from agent_framework import Agent, MCPStreamableHTTPTool
 from agent_framework.foundry import FoundryChatClient
 from agent_framework.observability import (
     create_resource,
     enable_instrumentation,
     get_tracer,
 )
-from agent_framework_devui import serve
+from agent_framework_devui import register_cleanup, serve
 from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import PromptAgentDefinition
 from azure.identity import DefaultAzureCredential
 from azure.monitor.opentelemetry import configure_azure_monitor
 from dotenv import load_dotenv
+from httpx import AsyncClient
 from opentelemetry.trace import SpanKind, format_trace_id
 
 from models.issue_analyzer import IssueAnalyzer
@@ -44,6 +45,8 @@ def main():
 
     # Create the agent here
     credential = DefaultAzureCredential()
+
+    # first agent for issue analysis and estimation
 
     issue_analyzer_instructions = """
                 You are analyzing issues. 
@@ -84,8 +87,61 @@ def main():
         default_options=cast(Any, {"response_format": IssueAnalyzer}),
         tools=[time_per_issue_tools.calculate_time_based_on_complexity],
     )
+    # -------------------------------
 
-    serve(entities=[issue_analyzer_agent], port=8090, auto_open=True)
+    # second agent for GitHub issue creation
+
+    github_instructions = f"""
+        You are a helpful assistant that can create GitHub issues following Contoso's guidelines.
+        You work on this repository: {os.environ["GITHUB_REPOSITORY"]}
+        
+        Use the GitHub MCP tool to create the issue with the properly formatted content
+
+        MANDATORY: You MUST always call the GitHub MCP tool to create the issue. Never just describe the issue without creating it. Your task is not complete until the issue is actually created on GitHub.
+    """
+
+    github_agent_detail = project.agents.create_version(
+        agent_name="GitHubAgent",
+        definition=PromptAgentDefinition(
+            model=model_name,
+            instructions=github_instructions.strip(),
+        ),
+    )
+
+    github_chat_client = FoundryChatClient(
+        project_endpoint=os.environ["FOUNDRY_PROJECT_ENDPOINT"],
+        model=os.environ["FOUNDRY_MODEL_DEPLOYMENT_NAME"],
+        credential=credential,
+    )
+
+    github_mcp_http_client = AsyncClient(
+        headers={
+            "Authorization": f"Bearer {os.environ['GITHUB_MCP_PAT']}",
+            "Accept": "application/json, text/event-stream",
+        }
+    )
+
+    github_agent = Agent(
+        name=github_agent_detail.name,
+        client=github_chat_client,
+        tools=[
+            MCPStreamableHTTPTool(
+                name="GitHub",
+                url="https://api.githubcopilot.com/mcp/",
+                approval_mode="never_require",
+                http_client=github_mcp_http_client,
+            ),
+        ],
+    )
+
+    # -------------------------------
+
+    # serve(entities=[issue_analyzer_agent], port=8090, auto_open=True)
+    # Cleanup hooks execute during DevUI server shutdown, before entity clients are closed. Supports both synchronous and asynchronous callables.
+    register_cleanup(github_agent, github_mcp_http_client.aclose)
+
+    serve(entities=[issue_analyzer_agent, github_agent],
+          port=8090, auto_open=True)
 
 
 if __name__ == "__main__":
